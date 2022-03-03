@@ -106,7 +106,7 @@ void _pio_set_input(Pio *p_pio, const uint32_t ul_mask, const uint32_t ul_attrib
 	
 	_pio_pull_up(p_pio, ul_mask, (ul_attribute & _PIO_PULLUP));
 	
-	if (ul_attribute & (_PIO_DEBOUNCE|_PIO_DEGLITCH)){
+	if (ul_attribute & (_PIO_DEBOUNCE|_PIO_DEGLITCH)) {
 		p_pio -> PIO_IFER = ul_mask;
 	} 
 	
@@ -136,6 +136,31 @@ void _pio_set_output(Pio *p_pio, const uint32_t ul_mask, const uint32_t ul_defau
 	
 	p_pio->PIO_OER = ul_mask;  
 	p_pio->PIO_PER = ul_mask;
+}
+
+uint32_t _pio_get(Pio *p_pio, const pio_type_t ul_type, const uint32_t ul_mask) {
+	
+	uint32_t io_line;
+	
+	if (ul_type == PIO_OUTPUT_0) {
+		io_line = p_pio->PIO_ODSR;
+	} 
+	else {
+		io_line = p_pio->PIO_PDSR;
+	}
+
+	if ((io_line & ul_mask) == 0) {
+		return 0;
+	} 
+	else {
+		return 1;
+	}
+}
+
+void _delay_ms(int ms) {
+	if (ms > 0) {
+		cpu_delay_ms(ms, F_CPU);
+	}
 }
 
 void init(void){
@@ -183,52 +208,52 @@ int main(void)
 	// aplicacoes embarcadas no devem sair do while(1).
 	while(1) {
 		
-		if(!pio_get(BUT_PIO, PIO_INPUT, BUT_PIO_IDX_MASK)) {
+		if(!_pio_get(BUT_PIO, PIO_INPUT, BUT_PIO_IDX_MASK)) {
 			// Pisca LED
 			for (int i=0; i<=5; i++) {
 				_pio_clear(LED_PIO, LED_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 				_pio_set(LED_PIO, LED_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 			}
 			
 			_pio_set(LED_PIO, LED_PIO_IDX_MASK);
 			
 		} 
 		
-		else if(!pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK)) {
+		else if(!_pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK)) {
 			
 			for (int j=0; j<=5; j++) {
 				_pio_clear(LED1_PIO, LED1_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 				_pio_set(LED1_PIO, LED1_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 			}
 			
 			_pio_set(LED1_PIO, LED1_PIO_IDX_MASK);
 			
 		}
 		
-		else if(!pio_get(BUT2_PIO, PIO_INPUT, BUT2_PIO_IDX_MASK)) {
+		else if(!_pio_get(BUT2_PIO, PIO_INPUT, BUT2_PIO_IDX_MASK)) {
 			
 			for (int k=0; k<=5; k++) {
 				_pio_clear(LED2_PIO, LED2_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 				_pio_set(LED2_PIO, LED2_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 			}
 			
 			_pio_set(LED2_PIO, LED2_PIO_IDX_MASK);
 			
 		}
 		
-		else if(!pio_get(BUT3_PIO, PIO_INPUT, BUT3_PIO_IDX_MASK)) {
+		else if(!_pio_get(BUT3_PIO, PIO_INPUT, BUT3_PIO_IDX_MASK)) {
 			
 			for (int x=0; x<=5; x++) {
 				_pio_clear(LED3_PIO, LED3_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 				_pio_set(LED3_PIO, LED3_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
-				delay_ms(200);                         // delay
+				_delay_ms(200);                         // delay
 			}
 			
 			_pio_set(LED3_PIO, LED3_PIO_IDX_MASK);
