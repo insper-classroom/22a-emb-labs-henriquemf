@@ -158,8 +158,10 @@ uint32_t _pio_get(Pio *p_pio, const pio_type_t ul_type, const uint32_t ul_mask) 
 }
 
 void _delay_ms(int ms) {
-	if (ms > 0) {
-		cpu_delay_ms(ms, F_CPU);
+	int i;
+	
+	for (i = 0; i < ms*145000 ; i++){
+		asm("NOP");
 	}
 }
 
@@ -210,7 +212,7 @@ int main(void)
 		
 		if(!_pio_get(BUT_PIO, PIO_INPUT, BUT_PIO_IDX_MASK)) {
 			// Pisca LED
-			for (int i=0; i<=5; i++) {
+			for (int i=0; i<5; i++) {
 				_pio_clear(LED_PIO, LED_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
 				_delay_ms(200);                         // delay
 				_pio_set(LED_PIO, LED_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
@@ -223,7 +225,7 @@ int main(void)
 		
 		else if(!_pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK)) {
 			
-			for (int j=0; j<=5; j++) {
+			for (int j=0; j<5; j++) {
 				_pio_clear(LED1_PIO, LED1_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
 				_delay_ms(200);                         // delay
 				_pio_set(LED1_PIO, LED1_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
@@ -236,7 +238,7 @@ int main(void)
 		
 		else if(!_pio_get(BUT2_PIO, PIO_INPUT, BUT2_PIO_IDX_MASK)) {
 			
-			for (int k=0; k<=5; k++) {
+			for (int k=0; k<5; k++) {
 				_pio_clear(LED2_PIO, LED2_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
 				_delay_ms(200);                         // delay
 				_pio_set(LED2_PIO, LED2_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
@@ -249,7 +251,7 @@ int main(void)
 		
 		else if(!_pio_get(BUT3_PIO, PIO_INPUT, BUT3_PIO_IDX_MASK)) {
 			
-			for (int x=0; x<=5; x++) {
+			for (int x=0; x<5; x++) {
 				_pio_clear(LED3_PIO, LED3_PIO_IDX_MASK);  // Limpa o pino LED_PIO_PIN
 				_delay_ms(200);                         // delay
 				_pio_set(LED3_PIO, LED3_PIO_IDX_MASK);    // Ativa o pino LED_PIO_PIN
