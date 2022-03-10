@@ -82,13 +82,19 @@ void pisca_led(int n, int t){
 	 
 	for (int i=0; i < n; i++) {
 		
+		if (but2Flag){
+			return;
+		}
+		
 		pio_clear(LED2_PIO, LED2_PIO_IDX_MASK);
 		gfx_mono_generic_draw_vertical_line(86+i, 16, 10, GFX_PIXEL_SET);
 		delay_ms(t);
 		pio_set(LED2_PIO, LED2_PIO_IDX_MASK);
 		delay_ms(t);
-		
 	}
+	
+	gfx_mono_generic_draw_filled_rect(87, 17, 31, 9, GFX_PIXEL_CLR);
+	gfx_mono_generic_draw_rect(86, 16, 32, 10, GFX_PIXEL_SET);
 }
 
 void lcdFreq(freq) {
@@ -178,12 +184,12 @@ int main (void) {
 		
 		int k;
 		
-		while (but1Flag || but2Flag || but3Flag) {
+		if (but1Flag || but2Flag || but3Flag) {
 			
 			  for (k = 0; k < bigNum; k++) {
 				  
 				  if (but3Flag) {
-					  freq += 100;
+					  freq += 10;
 					  delay_ms(200);
 					  lcdFreq(freq);
 					  but3Flag = 0;
@@ -193,7 +199,7 @@ int main (void) {
 				  if (but2Flag == 0) {
 					  
 					  if((!pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK)) && k >= bigNum/10) {
-						  freq+=100;
+						  freq+=10;
 						  delay_ms(300);
 						  lcdFreq(freq);
 						  but1Flag = 0;
@@ -201,7 +207,7 @@ int main (void) {
 						} 
 						
 						else if (pio_get(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK) && k < bigNum/10 ) {
-						  freq-=100;
+						  freq-=10;
 						  delay_ms(200);
 						  lcdFreq(freq);
 						  but1Flag = 0;
