@@ -1,4 +1,6 @@
 #include <asf.h>
+#include <time.h>
+#include <string.h>
 
 #include "gfx_mono_ug_2832hsweg04.h"
 #include "gfx_mono_text.h"
@@ -6,10 +8,10 @@
 
 // Defines para o LED da placa principal
 
-#define LED_PIO           PIOC                 // periferico que controla o LED
-#define LED_PIO_ID        ID_PIOC                 // ID do periférico PIOC (controla LED)
-#define LED_PIO_IDX       8                    // ID do LED no PIO
-#define LED_IDX_MASK  (1 << LED_PIO_IDX)   // Mascara para CONTROLARMOS o LED
+#define LED_PIO           PIOC                
+#define LED_PIO_ID        ID_PIOC               
+#define LED_PIO_IDX       8                   
+#define LED_IDX_MASK  (1 << LED_PIO_IDX)   
 
 // Defines para o LED 1 da placa do LCD
 
@@ -32,6 +34,13 @@
 #define LED3_PIO_IDX                  2
 #define LED3_IDX_MASK (1u << LED3_PIO_IDX)
 
+// Defines para o Botão 1
+
+#define BUT1_PIO					   PIOD
+#define BUT1_PIO_ID					   ID_PIOD
+#define BUT1_PIO_IDX				   28
+#define BUT1_PIO_IDX_MASK (1u << BUT1_PIO_IDX)
+
 typedef struct  {
 	uint32_t year;
 	uint32_t month;
@@ -43,7 +52,7 @@ typedef struct  {
 } calendar;
 
 volatile char flag_rtc_alarm = 0;
-
+volatile char but1_flag;
 
 
 void LED_init(int estado);
@@ -51,6 +60,10 @@ void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq);
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource);
 void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type);
 void pin_toggle(Pio *pio, uint32_t mask);
+
+void but1_callback (void) {
+	but1_flag = 1;
+}
 
 void TC1_Handler(void) {
 
@@ -61,9 +74,16 @@ void TC1_Handler(void) {
 
 void TC2_Handler(void) {
 
-	volatile uint32_t status = tc_get_status(TC0, 1);
+	volatile uint32_t status = tc_get_status(TC0, 2);
 
 	pin_toggle(LED_PIO, LED_IDX_MASK);   
+}
+
+void TC3_Handler(void) {
+
+	volatile uint32_t status = tc_get_status(TC1, 0);
+
+	pin_toggle(LED3_PIO, LED3_IDX_MASK);
 }
 
 void RTT_Handler(void) {
@@ -72,11 +92,11 @@ void RTT_Handler(void) {
 	ul_status = rtt_get_status(RTT);
 
 	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
-		RTT_init(4, 0, RTT_MR_RTTINCIEN);
+		RTT_init(1, 4, RTT_MR_RTTINCIEN);
+		pin_toggle(LED2_PIO, LED2_IDX_MASK);  
 	}
 	
-	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) {
-		pin_toggle(LED2_PIO, LED2_IDX_MASK);  
+	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) { 
 	}
 
 }
@@ -194,20 +214,41 @@ void pisca_led (int n, int t) {
 	}
 }
 
+void lcd(uint32_t current_hour, uint32_t current_min, uint32_t current_sec) {
+	char t[20];
+	sprintf(t, "%02d:%02d:%02d", current_hour, current_min, current_sec);
+	gfx_mono_draw_string(t, 5,16, &sysfont);
+}
+
+void init(void) {
+	pmc_enable_periph_clk(BUT1_PIO_ID);
+	pio_configure(BUT1_PIO, PIO_INPUT, BUT1_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+	pio_set_debounce_filter(BUT1_PIO, BUT1_PIO_IDX_MASK, 60);
+	pio_handler_set(BUT1_PIO, BUT1_PIO_ID, BUT1_PIO_IDX_MASK, PIO_IT_FALL_EDGE, but1_callback);
+
+	pio_enable_interrupt(BUT1_PIO, BUT1_PIO_IDX_MASK);
+	pio_get_interrupt_status(BUT1_PIO);
+
+	NVIC_EnableIRQ(BUT1_PIO_ID);
+	NVIC_SetPriority(BUT1_PIO_ID, 4);
+}
 
 
 int main (void)
 {
+	init();
 	board_init();
 	sysclk_init();
 	delay_init();
+	
+	gfx_mono_ssd1306_init();
 	
 	LED_init(1);
 	
 	RTT_init(1, 4, RTT_MR_ALMIEN);  
 	
 	calendar rtc_initial = {2018, 3, 19, 12, 15, 45 ,1};
-	RTC_init(RTC, ID_RTC, rtc_initial, RTC_IER_ALREN);
+	RTC_init(RTC, ID_RTC, rtc_initial, RTC_SR_SEC);
 	
 	uint32_t current_hour, current_min, current_sec;
 	uint32_t current_year, current_month, current_day, current_week;
@@ -222,31 +263,26 @@ int main (void)
 	
 	TC_init(TC0, ID_TC2, 2, 5);
 	tc_start(TC0, 2);
-
-	gfx_mono_ssd1306_init();
-  
-	gfx_mono_draw_filled_circle(20, 16, 16, GFX_PIXEL_SET, GFX_WHOLE);
-	gfx_mono_draw_string("mundo", 50,16, &sysfont);
   
 	while(1) {
+			
+			if (but1_flag) {
+					int sub = 0;
+					rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
+					int start_sec = current_sec;
+
+					while (sub < 20) {
+						rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
+						rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
+						sub = current_sec - start_sec;
+						lcd(current_hour, current_month, current_sec);	
+					}
+					
+					TC_init(TC1, ID_TC3, 0, 1);
+					tc_start(TC1, 0);
+					but1_flag = 0;
+			}	
 	
-			for(int i=70;i<=120;i+=2){
-				
-				gfx_mono_draw_rect(i, 5, 2, 10, GFX_PIXEL_SET);
-				delay_ms(10);
-				
-			}
-			
-			for(int i=120;i>=70;i-=2){
-				
-				gfx_mono_draw_rect(i, 5, 2, 10, GFX_PIXEL_CLR);
-				delay_ms(10);
-				
-			}
-			
-			if(flag_rtc_alarm){
-				pisca_led(5, 200);
-				flag_rtc_alarm = 0;
-			}			
+		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);	
 	}
 }
