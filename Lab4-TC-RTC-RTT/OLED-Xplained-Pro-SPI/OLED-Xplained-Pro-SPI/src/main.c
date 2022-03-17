@@ -271,7 +271,22 @@ int main (void)
 		
 		if (but1_flag) {
 			
-			rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 20);
+			uint32_t newmin, newsec;
+			
+			if (current_sec >= 40){
+				
+				newmin = (current_sec+20)/60;
+				newsec = (current_sec+20) % 60;
+				rtc_set_time_alarm(RTC, 1, current_hour, 1,  current_min + newmin, 1, newsec);
+
+			} 
+			
+			else {
+				
+				newmin = current_min;
+				newsec = current_sec + 20;
+				rtc_set_time_alarm(RTC, 1, current_hour, 1,  newmin, 1, newsec);
+			}
 			
 			but1_flag = 0;
 		}
