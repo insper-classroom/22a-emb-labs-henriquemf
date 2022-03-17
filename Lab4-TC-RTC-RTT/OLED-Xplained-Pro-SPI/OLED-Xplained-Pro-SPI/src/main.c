@@ -258,7 +258,6 @@ int main (void)
 	rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
 	
 	rtc_set_date_alarm(RTC, 1, current_month, 1, current_day);
-	rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 20);
 
 	TC_init(TC0, ID_TC1, 1, 4);
 	tc_start(TC0, 1);
@@ -271,23 +270,21 @@ int main (void)
 		rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
 		
 		if (but1_flag) {
-
-			int sub = 0;
-			int start_sec = current_sec;
-
-			if(flag_rtc_alarm) {
-				TC_init(TC1, ID_TC3, 0, 1);
-				tc_start(TC1, 0);
-				flag_rtc_alarm = 0;
-			}
+			
+			rtc_set_time_alarm(RTC, 1, current_hour, 1, current_min, 1, current_sec + 20);
 			
 			but1_flag = 0;
+		}
+
+		if(flag_rtc_alarm) {
+			TC_init(TC1, ID_TC3, 0, 1);
+			tc_start(TC1, 0);
+			flag_rtc_alarm = 0;
 		}
 
 		if(flag_rtc_sec) {
 			rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
 			lcd(current_hour, current_month, current_sec);
-			flag_rtc_alarm = 0 ;
 		}
 		
 		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
