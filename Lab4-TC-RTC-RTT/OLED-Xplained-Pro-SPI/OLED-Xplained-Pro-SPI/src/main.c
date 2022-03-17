@@ -8,10 +8,10 @@
 
 // Defines para o LED da placa principal
 
-#define LED_PIO           PIOC                
-#define LED_PIO_ID        ID_PIOC               
-#define LED_PIO_IDX       8                   
-#define LED_IDX_MASK  (1 << LED_PIO_IDX)   
+#define LED_PIO           PIOC
+#define LED_PIO_ID        ID_PIOC
+#define LED_PIO_IDX       8
+#define LED_IDX_MASK  (1 << LED_PIO_IDX)
 
 // Defines para o LED 1 da placa do LCD
 
@@ -51,7 +51,7 @@ typedef struct  {
 	uint32_t second;
 } calendar;
 
-volatile char flag_rtc_alarm = 0;
+volatile char flag_rtc_alarm, flag_rtc_sec = 0;
 volatile char but1_flag;
 
 
@@ -69,14 +69,14 @@ void TC1_Handler(void) {
 
 	volatile uint32_t status = tc_get_status(TC0, 1);
 
-	pin_toggle(LED1_PIO, LED1_IDX_MASK);   
+	pin_toggle(LED1_PIO, LED1_IDX_MASK);
 }
 
 void TC2_Handler(void) {
 
 	volatile uint32_t status = tc_get_status(TC0, 2);
 
-	pin_toggle(LED_PIO, LED_IDX_MASK);   
+	pin_toggle(LED_PIO, LED_IDX_MASK);
 }
 
 void TC3_Handler(void) {
@@ -93,10 +93,10 @@ void RTT_Handler(void) {
 
 	if ((ul_status & RTT_SR_ALMS) == RTT_SR_ALMS) {
 		RTT_init(1, 4, RTT_MR_RTTINCIEN);
-		pin_toggle(LED2_PIO, LED2_IDX_MASK);  
+		pin_toggle(LED2_PIO, LED2_IDX_MASK);
 	}
 	
-	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) { 
+	if ((ul_status & RTT_SR_RTTINC) == RTT_SR_RTTINC) {
 	}
 
 }
@@ -106,6 +106,8 @@ void RTC_Handler(void) {
 	
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		// o código para irq de segundo vem aqui
+		flag_rtc_sec = 1;
+
 	}
 	
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
@@ -245,10 +247,10 @@ int main (void)
 	
 	LED_init(1);
 	
-	RTT_init(1, 4, RTT_MR_ALMIEN);  
+	RTT_init(1, 4, RTT_MR_ALMIEN);
 	
 	calendar rtc_initial = {2018, 3, 19, 12, 15, 45 ,1};
-	RTC_init(RTC, ID_RTC, rtc_initial, RTC_SR_SEC);
+	RTC_init(RTC, ID_RTC, rtc_initial, RTC_SR_SEC | RTC_SR_ALARM );
 	
 	uint32_t current_hour, current_min, current_sec;
 	uint32_t current_year, current_month, current_day, current_week;
@@ -263,26 +265,31 @@ int main (void)
 	
 	TC_init(TC0, ID_TC2, 2, 5);
 	tc_start(TC0, 2);
-  
-	while(1) {
-			
-			if (but1_flag) {
-					int sub = 0;
-					rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-					int start_sec = current_sec;
-
-					while (sub < 20) {
-						rtc_get_date(RTC, &current_year, &current_month, &current_day, &current_week);
-						rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
-						sub = current_sec - start_sec;
-						lcd(current_hour, current_month, current_sec);	
-					}
-					
-					TC_init(TC1, ID_TC3, 0, 1);
-					tc_start(TC1, 0);
-					but1_flag = 0;
-			}	
 	
-		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);	
+	while(1) {
+		
+		rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
+		
+		if (but1_flag) {
+
+			int sub = 0;
+			int start_sec = current_sec;
+
+			if(flag_rtc_alarm) {
+				TC_init(TC1, ID_TC3, 0, 1);
+				tc_start(TC1, 0);
+				flag_rtc_alarm = 0;
+			}
+			
+			but1_flag = 0;
+		}
+
+		if(flag_rtc_sec) {
+			rtc_get_time(RTC, &current_hour, &current_min, &current_sec);
+			lcd(current_hour, current_month, current_sec);
+			flag_rtc_alarm = 0 ;
+		}
+		
+		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 	}
 }
