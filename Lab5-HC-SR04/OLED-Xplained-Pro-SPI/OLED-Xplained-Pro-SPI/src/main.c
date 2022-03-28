@@ -6,10 +6,14 @@
 #include "gfx_mono_text.h"
 #include "sysfont.h"
 
+// ----------------------- Defines do Botão 1  -----------------------
+
 #define BUT1_PIO					PIOD
 #define BUT1_PIO_ID					ID_PIOD
 #define BUT1_PIO_IDX				28
 #define BUT1_PIO_IDX_MASK			(1u << BUT1_PIO_IDX)
+
+// ----------------------- Defines do sensor  -----------------------
 
 #define TRIG_PIO					PIOA
 #define TRIG_PIO_ID					ID_PIOA
@@ -21,7 +25,7 @@
 #define ECHO_PIO_IDX				19
 #define ECHO_PIO_IDX_MASK			(1 << ECHO_PIO_IDX)
 
-
+// ----------------------- Variáveis Globais ------------------------
 
 volatile char echo_flag = 0;
 volatile char flag_rtt_alarm = 0;
@@ -33,6 +37,8 @@ double distancias_medidas[] = {0.0, 0.0, 0.0, 0.0};
 
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource);
 
+
+// ----------------------- Funções -----------------------
 
 void but1_callback(void) {
 	
@@ -164,6 +170,10 @@ void lcd(int tempo) {
 	
 }
 
+///////////////////////////////////////////////////////////
+//                     INIT                              //
+///////////////////////////////////////////////////////////
+    
 void io_init(void) {
 	
 	board_init();
@@ -198,6 +208,11 @@ void io_init(void) {
 	NVIC_SetPriority(ECHO_PIO_ID, 1);
 	NVIC_SetPriority(BUT1_PIO_ID, 2);
 }
+
+
+///////////////////////////////////////////////////////////
+//                     MAIN                              //
+///////////////////////////////////////////////////////////
 
 
 int main (void) {
