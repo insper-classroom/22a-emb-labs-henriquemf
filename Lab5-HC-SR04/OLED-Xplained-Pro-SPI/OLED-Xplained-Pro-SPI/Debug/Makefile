@@ -58,7 +58,6 @@ SUBDIRS :=  \
 ../src/ASF/sam/drivers/rtt/ \
 ../src/ASF/sam/drivers/spi/ \
 ../src/ASF/sam/drivers/tc/ \
-../src/ASF/sam/drivers/tc/tc_capture_waveform_example/ \
 ../src/ASF/sam/utils/ \
 ../src/ASF/sam/utils/cmsis/ \
 ../src/ASF/sam/utils/cmsis/same70/ \

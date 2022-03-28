@@ -23,7 +23,7 @@
 
 
 
-volatile char echo_flag = 0; 
+volatile char echo_flag = 0;
 volatile char flag_rtt_alarm = 0;
 volatile double freq = (double) 1/(0.000058*2);
 volatile int tempo = 0;
@@ -48,15 +48,15 @@ void echo_callback(void) {
 	
 	if (echo_flag == 0) {
 		
-		RTT_init(freq_maior, (int) alarm*freq_maior, RTT_MR_ALMIEN);
 		echo_flag = 1;
+		RTT_init(freq_maior, (int) alarm*freq_maior, RTT_MR_ALMIEN);
 		
-	} 
+	}
 	
 	else {
 		
-		tempo = rtt_read_timer_value(RTT);
 		echo_flag = 0;
+		tempo = rtt_read_timer_value(RTT);
 		
 	}
 }
@@ -174,7 +174,7 @@ void io_init(void) {
 
 	NVIC_EnableIRQ(ECHO_PIO_ID);
 	NVIC_EnableIRQ(BUT1_PIO_ID);
-	NVIC_SetPriority(ECHO_PIO_ID, 1);	
+	NVIC_SetPriority(ECHO_PIO_ID, 1);
 	NVIC_SetPriority(BUT1_PIO_ID, 2);
 }
 
@@ -182,18 +182,18 @@ void io_init(void) {
 int main (void) {
 	
 	io_init();
-  
+	
 	while(1) {
 
 		if (but1_flag) {
 			
+			but1_flag = 0;
 			trig();
 			lcd(tempo);
-			but1_flag = 0;
 
 		}
 		
 		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
-			
+		
 	}
 }
