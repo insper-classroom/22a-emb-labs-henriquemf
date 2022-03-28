@@ -25,7 +25,7 @@
 
 volatile char echo_flag = 0; 
 volatile char flag_rtt_alarm = 0;
-volatile float freq = (float) 1/(0.000058*2);
+volatile double freq = (double) 1/(0.000058*2);
 volatile int tempo = 0;
 volatile char but1_flag = 0;
 
@@ -39,30 +39,37 @@ void but1_callback(void) {
 	
 }
 
-void TC1_Handler(void) {
-
-	volatile uint32_t status = tc_get_status(TC0, 1);
-
-	i++;
+void echo_callback(void) {
+	
+	double tempo_min = 0.000058;
+	int freq_maior = 1/tempo_min;
+	
+	double alarm = 8/340;
+	
+	if (echo_flag == 0) {
+		
+		RTT_init(freq_maior, (int) alarm*freq_maior, RTT_MR_ALMIEN);
+		echo_flag = 1;
+		
+	} 
+	
+	else {
+		
+		tempo = rtt_read_timer_value(RTT);
+		echo_flag = 0;
+		
+	}
 }
 
-
-void TC_init(Tc * TC, int ID_TC, int TC_CHANNEL, int freq){
-	uint32_t ul_div;
-	uint32_t ul_tcclks;
-	uint32_t ul_sysclk = sysclk_get_cpu_hz();
-
-	pmc_enable_periph_clk(ID_TC);
-
-	tc_find_mck_divisor(freq, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
-	tc_init(TC, TC_CHANNEL, ul_tcclks | TC_CMR_CPCTRG);
-	tc_write_rc(TC, TC_CHANNEL, (ul_sysclk / ul_div) / freq);
-
-	NVIC_SetPriority(ID_TC, 4);
-	NVIC_EnableIRQ((IRQn_Type) ID_TC);
-	tc_enable_interrupt(TC, TC_CHANNEL, TC_IER_CPCS);
+int calcula_distancia(int tempo_em_ms) {
+	
+	int v_som = 340;
+	double t = tempo_em_ms/freq;
+	double dist = (v_som*t*100.0)/2.0; //Multiplica por 100 pois queremos a dist em cm e dividimos por 2 para pegar apenas a ida, não a volta.
+	
+	return dist;
+	
 }
-
 
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource) {
 
@@ -125,6 +132,17 @@ void trig(void) {
 
 }
 
+void lcd(int tempo) {
+	char string[20];
+	char cm[4];
+	double distancia_calculada = calcula_distancia(tempo);
+	
+	sprintf(string, "%2.1f", distancia_calculada);
+	gfx_mono_generic_draw_filled_rect(75, 9, 127, 31, GFX_PIXEL_CLR);
+	gfx_mono_draw_string(string, 80,5, &sysfont);
+	gfx_mono_draw_string(cm, 90, 20, &sysfont);
+}
+
 void io_init(void) {
 	
 	board_init();
@@ -169,9 +187,9 @@ int main (void) {
 
 		if (but1_flag) {
 			
-			but1_flag = 0;
 			trig();
-			draw(tempo);
+			lcd(tempo);
+			but1_flag = 0;
 
 		}
 		
