@@ -19,23 +19,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY
   7 .comment      00000059  00000000  00000000  00020a06  2**0
                   CONTENTS, READONLY
-  8 .debug_info   00018b3b  00000000  00000000  00020a5f  2**0
+  8 .debug_info   00018b5c  00000000  00000000  00020a5f  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_abbrev 00003907  00000000  00000000  0003959a  2**0
+  9 .debug_abbrev 00003907  00000000  00000000  000395bb  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    000057be  00000000  00000000  0003cea1  2**0
+ 10 .debug_loc    000057be  00000000  00000000  0003cec2  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_aranges 000008c8  00000000  00000000  0004265f  2**0
+ 11 .debug_aranges 000008c8  00000000  00000000  00042680  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000918  00000000  00000000  00042f27  2**0
+ 12 .debug_ranges 00000918  00000000  00000000  00042f48  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_macro  000216b0  00000000  00000000  0004383f  2**0
+ 13 .debug_macro  000216b0  00000000  00000000  00043860  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_line   0000efd9  00000000  00000000  00064eef  2**0
+ 14 .debug_line   0000efdc  00000000  00000000  00064f10  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    000901be  00000000  00000000  00073ec8  2**0
+ 15 .debug_str    000901d1  00000000  00000000  00073eec  2**0
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_frame  00001f0c  00000000  00000000  00104088  2**2
+ 16 .debug_frame  00001f0c  00000000  00000000  001040c0  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -3607,7 +3607,7 @@ void but1_callback(void) {
 void echo_callback(void) {
   4014ec:	b570      	push	{r4, r5, r6, lr}
 	double tempo_min = 0.000058;
-	int freq_maior = 1/tempo_min;
+	int freq_maior = 1/(tempo_min*2);
 	
 	double alarm = 8/340;
 	
@@ -3632,9 +3632,9 @@ void echo_callback(void) {
   401502:	6018      	str	r0, [r3, #0]
   401504:	bd70      	pop	{r4, r5, r6, pc}
 		echo_flag = 1;
-  401506:	2501      	movs	r5, #1
+  401506:	2201      	movs	r2, #1
   401508:	4b14      	ldr	r3, [pc, #80]	; (40155c <echo_callback+0x70>)
-  40150a:	701d      	strb	r5, [r3, #0]
+  40150a:	701a      	strb	r2, [r3, #0]
 
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource) {
 
@@ -3647,7 +3647,7 @@ static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSou
   401512:	4b16      	ldr	r3, [pc, #88]	; (40156c <echo_callback+0x80>)
   401514:	4798      	blx	r3
 	rtt_init(RTT, pllPreScale);
-  401516:	4629      	mov	r1, r5
+  401516:	2103      	movs	r1, #3
   401518:	4620      	mov	r0, r4
   40151a:	4b15      	ldr	r3, [pc, #84]	; (401570 <echo_callback+0x84>)
   40151c:	4798      	blx	r3
@@ -3819,6 +3819,7 @@ void lcd(int tempo) {
   40162c:	4b20      	ldr	r3, [pc, #128]	; (4016b0 <lcd+0x8c>)
   40162e:	4798      	blx	r3
 	
+	
 	if (flag_rtt_alarm || distancia_calculada > 400) {
   401630:	4b20      	ldr	r3, [pc, #128]	; (4016b4 <lcd+0x90>)
   401632:	781b      	ldrb	r3, [r3, #0]
@@ -3861,9 +3862,9 @@ void lcd(int tempo) {
   40166e:	4818      	ldr	r0, [pc, #96]	; (4016d0 <lcd+0xac>)
   401670:	4b18      	ldr	r3, [pc, #96]	; (4016d4 <lcd+0xb0>)
   401672:	4798      	blx	r3
-		gfx_mono_draw_string(string, 80,5, &sysfont);
-		gfx_mono_draw_string(cm, 90, 20, &sysfont);
-		
+				//gfx_mono_draw_pixel(110, 19 - altura, GFX_PIXEL_SET); // v[3]
+			//}
+		//}
 	}
 	
 }

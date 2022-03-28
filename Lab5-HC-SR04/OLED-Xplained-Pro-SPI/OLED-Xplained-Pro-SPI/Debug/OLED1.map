@@ -6396,6 +6396,8 @@ Discarded input sections
                 0x00000000        0x4 src/main.o
  .bss.cpu_irq_prev_interrupt_state
                 0x00000000        0x1 src/main.o
+ .bss.distancias_medidas
+                0x00000000       0x20 src/main.o
  .debug_macro   0x00000000      0x8ce src/main.o
  .debug_macro   0x00000000      0x16d src/main.o
  .debug_macro   0x00000000      0x64b src/main.o
@@ -7623,7 +7625,7 @@ OUTPUT(OLED1.elf elf32-littlearm)
  .comment       0x00000059       0x5a src/ASF/sam/utils/syscalls/gcc/syscalls.o
  .comment       0x00000059       0x5a src/main.o
 
-.debug_info     0x00000000    0x18b3b
+.debug_info     0x00000000    0x18b5c
  .debug_info    0x00000000      0xcd1 src/ASF/sam/drivers/rtt/rtt.o
  .debug_info    0x00000cd1     0x115d src/ASF/sam/drivers/spi/spi.o
  .debug_info    0x00001e2e      0xdd2 src/oled/gfx_mono_framebuffer.o
@@ -7643,7 +7645,7 @@ OUTPUT(OLED1.elf elf32-littlearm)
  .debug_info    0x00014199     0x156a src/ASF/sam/utils/cmsis/same70/source/templates/gcc/startup_same70.o
  .debug_info    0x00015703      0x55b src/ASF/sam/utils/cmsis/same70/source/templates/system_same70.o
  .debug_info    0x00015c5e      0xdb0 src/ASF/sam/utils/syscalls/gcc/syscalls.o
- .debug_info    0x00016a0e     0x212d src/main.o
+ .debug_info    0x00016a0e     0x214e src/main.o
 
 .debug_abbrev   0x00000000     0x3907
  .debug_abbrev  0x00000000      0x256 src/ASF/sam/drivers/rtt/rtt.o
@@ -7948,7 +7950,7 @@ OUTPUT(OLED1.elf elf32-littlearm)
  .debug_macro   0x00020e01      0x899 src/main.o
  .debug_macro   0x0002169a       0x16 src/main.o
 
-.debug_line     0x00000000     0xefd9
+.debug_line     0x00000000     0xefdc
  .debug_line    0x00000000      0xa72 src/ASF/sam/drivers/rtt/rtt.o
  .debug_line    0x00000a72      0xc41 src/ASF/sam/drivers/spi/spi.o
  .debug_line    0x000016b3      0xe63 src/oled/gfx_mono_framebuffer.o
@@ -7968,9 +7970,9 @@ OUTPUT(OLED1.elf elf32-littlearm)
  .debug_line    0x0000ca7e      0xa73 src/ASF/sam/utils/cmsis/same70/source/templates/gcc/startup_same70.o
  .debug_line    0x0000d4f1      0x7e9 src/ASF/sam/utils/cmsis/same70/source/templates/system_same70.o
  .debug_line    0x0000dcda      0x40b src/ASF/sam/utils/syscalls/gcc/syscalls.o
- .debug_line    0x0000e0e5      0xef4 src/main.o
+ .debug_line    0x0000e0e5      0xef7 src/main.o
 
-.debug_str      0x00000000    0x901be
+.debug_str      0x00000000    0x901d1
  .debug_str     0x00000000    0x8198f src/ASF/sam/drivers/rtt/rtt.o
                               0x82020 (size before relaxing)
  .debug_str     0x0008198f     0x4610 src/ASF/sam/drivers/spi/spi.o
@@ -8009,8 +8011,8 @@ OUTPUT(OLED1.elf elf32-littlearm)
                               0x72844 (size before relaxing)
  .debug_str     0x0008f813      0x779 src/ASF/sam/utils/syscalls/gcc/syscalls.o
                                0x7475 (size before relaxing)
- .debug_str     0x0008ff8c      0x232 src/main.o
-                              0x8d72d (size before relaxing)
+ .debug_str     0x0008ff8c      0x245 src/main.o
+                              0x8d740 (size before relaxing)
 
 .debug_frame    0x00000000     0x1f0c
  .debug_frame   0x00000000       0xac src/ASF/sam/drivers/rtt/rtt.o
@@ -8411,6 +8413,7 @@ calcula_distancia                                 src/main.o
 cleanup_glue                                      c:/program files (x86)/atmel/studio/7.0/toolchain/arm/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libc.a(lib_a-reent.o)
 cpu_irq_enter_critical                            src/ASF/common/utils/interrupt/interrupt_sam_nvic.o
 cpu_irq_leave_critical                            src/ASF/common/utils/interrupt/interrupt_sam_nvic.o
+distancias_medidas                                src/main.o
 echo_callback                                     src/main.o
 echo_flag                                         src/main.o
 errno                                             c:/program files (x86)/atmel/studio/7.0/toolchain/arm/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/6.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libc.a(lib_a-reent.o)

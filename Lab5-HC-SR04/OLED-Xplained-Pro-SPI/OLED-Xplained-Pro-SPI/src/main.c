@@ -28,6 +28,7 @@ volatile char flag_rtt_alarm = 0;
 volatile double freq = (double) 1/(0.000058*2);
 volatile int tempo = 0;
 volatile char but1_flag = 0;
+double distancias_medidas[] = {0.0, 0.0, 0.0, 0.0};
 
 
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource);
@@ -42,7 +43,7 @@ void but1_callback(void) {
 void echo_callback(void) {
 	
 	double tempo_min = 0.000058;
-	int freq_maior = 1/tempo_min;
+	int freq_maior = 1/(tempo_min*2);
 	
 	double alarm = 8/340;
 	
@@ -138,6 +139,7 @@ void lcd(int tempo) {
 	char string[20];
 	char cm[4];
 	double distancia_calculada = calcula_distancia(tempo);
+	
 	
 	if (flag_rtt_alarm || distancia_calculada > 400) {
 		
