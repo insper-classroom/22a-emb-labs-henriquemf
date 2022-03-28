@@ -6,9 +6,9 @@
 #include "gfx_mono_text.h"
 #include "sysfont.h"
 
-#define BUT1_PIO					PIOB
-#define BUT1_PIO_ID					ID_PIOB
-#define BUT1_PIO_IDX				23
+#define BUT1_PIO					PIOD
+#define BUT1_PIO_ID					ID_PIOD
+#define BUT1_PIO_IDX				28
 #define BUT1_PIO_IDX_MASK			(1u << BUT1_PIO_IDX)
 
 #define TRIG_PIO					PIOA
@@ -120,8 +120,10 @@ void RTT_Handler(void) {
 
 }
 
-static float get_time_rtt(){
+static float get_time_rtt() {
+	
 	uint ul_previous_time = rtt_read_timer_value(RTT);
+	
 }
 
 void trig(void) {
@@ -137,10 +139,27 @@ void lcd(int tempo) {
 	char cm[4];
 	double distancia_calculada = calcula_distancia(tempo);
 	
-	sprintf(string, "%2.1f", distancia_calculada);
-	gfx_mono_generic_draw_filled_rect(75, 9, 127, 31, GFX_PIXEL_CLR);
-	gfx_mono_draw_string(string, 80,5, &sysfont);
-	gfx_mono_draw_string(cm, 90, 20, &sysfont);
+	if (flag_rtt_alarm || distancia_calculada > 400) {
+		
+		gfx_mono_generic_draw_filled_rect(0, 0, 127, 31, GFX_PIXEL_CLR);
+		
+		sprintf(string, "Erro 404");
+		gfx_mono_draw_string(string, 0,0, &sysfont);
+		flag_rtt_alarm = 0;
+		delay_ms(200);
+		
+	}
+	
+	else {
+		
+		gfx_mono_generic_draw_filled_rect(0, 0, 127, 31, GFX_PIXEL_CLR);
+	
+		sprintf(string, "%2.1f", distancia_calculada);
+		gfx_mono_draw_string(string, 80,5, &sysfont);
+		gfx_mono_draw_string(cm, 90, 20, &sysfont);
+		
+	}
+	
 }
 
 void io_init(void) {
