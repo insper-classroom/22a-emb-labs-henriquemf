@@ -43,20 +43,15 @@ static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSou
 void but1_callback(void) {
 	
 	but1_flag = 1;
-	
+		
 }
 
 void echo_callback(void) {
 	
-	double tempo_min = 0.000058;
-	int freq_maior = 1/(tempo_min*2);
-	
-	double alarm = 8/340;
-	
-	if (echo_flag == 0) {
+	if (pio_get(ECHO_PIO, PIO_INPUT, ECHO_PIO_IDX_MASK)) {
 		
 		echo_flag = 1;
-		RTT_init(freq_maior, (int) alarm*freq_maior, RTT_MR_ALMIEN);
+		RTT_init(freq, 0, 0);
 		
 	}
 	
@@ -66,16 +61,6 @@ void echo_callback(void) {
 		tempo = rtt_read_timer_value(RTT);
 		
 	}
-}
-
-int calcula_distancia(int tempo_em_ms) {
-	
-	int v_som = 340;
-	double t = tempo_em_ms/freq;
-	double dist = (v_som*t*100.0)/2.0; //Multiplica por 100 pois queremos a dist em cm e dividimos por 2 para pegar apenas a ida, não a volta.
-	
-	return dist;
-	
 }
 
 static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSource) {
@@ -105,8 +90,6 @@ static void RTT_init(float freqPrescale, uint32_t IrqNPulses, uint32_t rttIRQSou
 	rtt_disable_interrupt(RTT, RTT_MR_RTTINCIEN | RTT_MR_ALMIEN);
 	
 }
-
-
 
 void RTT_Handler(void) {
 	uint32_t ul_status;
@@ -141,16 +124,13 @@ void trig(void) {
 
 }
 
-void lcd(int tempo) {
+void lcd(float dist_calculada) {
 	char string[20];
 	char cm[4];
-	double distancia_calculada = calcula_distancia(tempo);
 	
-	
-	if (flag_rtt_alarm || distancia_calculada > 400) {
-		
-		gfx_mono_generic_draw_filled_rect(0, 0, 127, 31, GFX_PIXEL_CLR);
-		
+	if (flag_rtt_alarm || dist_calculada > 400) {
+		gfx_mono_draw_string("            ", 0, 5               n, &sysfont);
+			
 		sprintf(string, "Erro 404");
 		gfx_mono_draw_string(string, 0,0, &sysfont);
 		flag_rtt_alarm = 0;
@@ -159,14 +139,21 @@ void lcd(int tempo) {
 	}
 	
 	else {
+		gfx_mono_draw_string("            ", 0, 0, &sysfont);
 		
-		gfx_mono_generic_draw_filled_rect(0, 0, 127, 31, GFX_PIXEL_CLR);
-	
-		sprintf(string, "%2.1f", distancia_calculada);
-		gfx_mono_draw_string(string, 80,5, &sysfont);
-		gfx_mono_draw_string(cm, 90, 20, &sysfont);
+		sprintf(string, "%.1f", dist_calculada);
+		gfx_mono_draw_string(string, 0, 5, &sysfont);
 		
 	}
+	
+}
+
+void calcula_distancia() {
+	
+	int v_som = 340;
+	float dist = (float) ((tempo/(freq*2))*v_som)*100;
+	
+	lcd(dist);
 	
 }
 
@@ -220,14 +207,17 @@ int main (void) {
 	io_init();
 	
 	while(1) {
-
+		
 		if (but1_flag) {
-			
 			but1_flag = 0;
 			trig();
-			lcd(tempo);
 
 		}
+		
+		else if (echo_flag) {
+			calcula_distancia();	
+		}
+		
 		
 		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
 		
