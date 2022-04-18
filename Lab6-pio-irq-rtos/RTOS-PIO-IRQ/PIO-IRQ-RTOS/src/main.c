@@ -45,13 +45,10 @@ extern void xPortSysTickHandler(void);
 /* recursos RTOS                                                        */
 /************************************************************************/
 
-/** Semaforo a ser usado pela task led */
-SemaphoreHandle_t xSemaphoreBut;
-SemaphoreHandle_t xSemaphoreBut1;
-
 /** Queue for msg log send data */
 QueueHandle_t xQueueLedFreq;
-QueueHandle_t xQueueTest;
+QueueHandle_t xQueueDec;
+QueueHandle_t xQueueInc;
 
 /************************************************************************/
 /* prototypes local                                                     */
@@ -108,15 +105,13 @@ extern void vApplicationMallocFailedHook(void) {
 void but_callback(void) {
   uint32_t delayDec = 100;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  xSemaphoreGiveFromISR(xSemaphoreBut, &xHigherPriorityTaskWoken);
-  xQueueSendFromISR(xQueueTest, (void *)&delayDec, 10);
+  xQueueSendFromISR(xQueueDec, (void *)&delayDec, 10);
 }
 
 void but1_callback(void) {
 	uint32_t delayInc = 100;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	xSemaphoreGiveFromISR(xSemaphoreBut1, &xHigherPriorityTaskWoken);
-	xQueueSendFromISR(xQueueTest, (void *)&delayInc, 10);
+	xQueueSendFromISR(xQueueInc, (void *)&delayInc, 10);
 }
 
 /************************************************************************/
@@ -141,7 +136,7 @@ static void task_led(void *pvParameters) {
       delayMs = msg / portTICK_PERIOD_MS;
       printf("task_led: %d \n", delayMs);
     }
-
+	
     /* pisca LED */
     pin_toggle(LED_PIO, LED_IDX_MASK);
 
@@ -156,20 +151,22 @@ static void task_but(void *pvParameters) {
   BUT_init();
 
   uint32_t delayTicks = 2000;
-  uint32_t delayDec = NULL;
-  uint32_t delayInc = NULL;
+  uint32_t delayDec = 0;
+  uint32_t delayInc = 0;
   
   for (;;) {
 
-	  xQueueReceive(xQueueTest, (void *)&delayDec, 10);
-	  xQueueReceive(xQueueTest, (void *)&delayInc, 10);
+	  if (xQueueReceive(xQueueDec, (void *)&delayDec, 10)) {
+		  delayTicks -= delayDec;
+		  printf("task_but: %d \n", delayTicks);
+		  xQueueSend(xQueueLedFreq, (void *)&delayTicks, 10);
+	  }
 	  
-      delayTicks -= delayDec;
-	  delayTicks += delayInc;
-
-	  xQueueSend(xQueueLedFreq, (void *)&delayTicks, 10);
-	  	
-	  printf("task_but: %d \n", delayTicks);
+	  if (xQueueReceive(xQueueInc, (void *)&delayInc, 10)) {
+		   delayTicks += delayInc;
+		   printf("task_but: %d \n", delayTicks);
+		   xQueueSend(xQueueLedFreq, (void *)&delayTicks, 10);
+	  }
 	  
 	  if (delayTicks == 100) {
 		  delayTicks = 2000;
@@ -267,24 +264,19 @@ int main(void) {
 	
   printf("Sys init ok \n");
 
-  /* Attempt to create a semaphore. */
-  xSemaphoreBut = xSemaphoreCreateBinary();
-  if (xSemaphoreBut == NULL)
-    printf("falha em criar o semaforo \n");
-	
-  xSemaphoreBut1 = xSemaphoreCreateBinary();
-  if (xSemaphoreBut1 == NULL)
-	printf("falha em criar o semaforo DO BOTÃO 1 \n");
-
   /* cria queue com 32 "espacos" */
   /* cada espaço possui o tamanho de um inteiro*/
   xQueueLedFreq = xQueueCreate(32, sizeof(uint32_t));
   if (xQueueLedFreq == NULL)
     printf("falha em criar a queue \n");
 	
-  xQueueTest = xQueueCreate(32, sizeof(uint32_t));
-  if (xQueueTest == NULL)
+  xQueueDec = xQueueCreate(32, sizeof(uint32_t));
+  if (xQueueDec == NULL)
 	printf("falha em criar a queue \n");
+	
+  xQueueInc = xQueueCreate(32, sizeof(uint32_t));
+  if (xQueueInc == NULL)
+	 printf("falha em criar a queue \n");
 
   /* Create task to make led blink */
   if (xTaskCreate(task_led, "Led", TASK_LED_STACK_SIZE, NULL,
