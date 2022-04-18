@@ -8,9 +8,9 @@
 #define USART_COM_ID ID_USART1
 #define USART_COM USART1
 
-#define AFEC_POT AFEC0
-#define AFEC_POT_ID ID_AFEC0
-#define AFEC_POT_CHANNEL 0 // Canal do pino PD30
+#define AFEC_POT				AFEC0
+#define AFEC_POT_ID				ID_AFEC0
+#define AFEC_POT_CHANNEL		0 // Canal do pino PD30
 
 /************************************************************************/
 /* RTOS                                                                */
@@ -96,10 +96,10 @@ void TC1_Handler(void) {
 }
 
 static void AFEC_pot_Callback(void) {
-  adcData adc;
-  adc.value = afec_channel_get_value(AFEC_POT, AFEC_POT_CHANNEL);
-  BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-  xQueueSendFromISR(xQueueADC, &adc, &xHigherPriorityTaskWoken);
+	adcData adc;
+	adc.value = afec_channel_get_value(AFEC_POT, AFEC_POT_CHANNEL);
+	BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+	xQueueSendFromISR(xQueueADCProc, &adc, &xHigherPriorityTaskWoken);
 }
 
 /************************************************************************/
@@ -112,14 +112,39 @@ static void task_proc(void *pvParameters){
 	tc_start(TC0, 1);
 
 	adcData adc;
-	uint valores[5];
-	int i = 0;
-	float media;
-	uint temp;
+	float med;
+	uint all_val[10];
+	uint j = 0;
+	uint sum;
 
 	while (1) {
-	
+		
+		if (xQueueReceive(xQueueADCProc, (void *)&adc, 1000)) {
+			all_val[j] = adc.value;
+			printf("task adc: %d \n",adc);
+			j++;
+		}
+		
+		while(j >= 10) {
+			sum = 0;
 			
+			for (int i = 0; i < 10; i++) {
+				sum += all_val[i];
+			}
+			
+			printf("SOMA: %d \n", sum);			
+			med = sum/10.0;
+			
+			xQueueSend(xQueueADC, (void *)&med, 10);
+			
+			for (int k = 0; k < 9; k++){
+				all_val[k] = all_val[k+1];
+			}
+			
+			if (xQueueReceive(xQueueADCProc, &(adc), 1000)){
+				all_val[9] = adc.value;
+			}
+		}
 
 		
 	}
@@ -128,17 +153,11 @@ static void task_proc(void *pvParameters){
 
 static void task_adc(void *pvParameters) {
 
-  // configura ADC e TC para controlar a leitura
-  config_AFEC_pot(AFEC_POT, AFEC_POT_ID, AFEC_POT_CHANNEL, AFEC_pot_Callback);
-  TC_init(TC0, ID_TC1, 1, 10);
-  tc_start(TC0, 1);
-
-  // variável para recever dados da fila
-  adcData adc;
+  float adc;
 
   while (1) {
     if (xQueueReceive(xQueueADC, &(adc), 1000)) {
-      printf("ADC: %d \n", adc);
+      printf("ADC: %f \n", adc);
     } else {
       printf("Nao chegou um novo dado em 1 segundo");
     }
@@ -245,10 +264,19 @@ int main(void) {
   xQueueADC = xQueueCreate(100, sizeof(adcData));
   if (xQueueADC == NULL)
     printf("falha em criar a queue xQueueADC \n");
+	
+  xQueueADCProc = xQueueCreate(100, sizeof(adcData));
+  if (xQueueADCProc == NULL)
+	printf("falha em criar a queue xQueueADC \n");
 
   if (xTaskCreate(task_adc, "ADC", TASK_ADC_STACK_SIZE, NULL,
                   TASK_ADC_STACK_PRIORITY, NULL) != pdPASS) {
     printf("Failed to create test ADC task\r\n");
+  }
+  
+  if (xTaskCreate(task_proc, "PROC", TASK_PROC_STACK_SIZE, NULL,
+  TASK_PROC_STACK_PRIORITY, NULL) != pdPASS) {
+	  printf("Failed to create test ADC task\r\n");
   }
 
   vTaskStartScheduler();
