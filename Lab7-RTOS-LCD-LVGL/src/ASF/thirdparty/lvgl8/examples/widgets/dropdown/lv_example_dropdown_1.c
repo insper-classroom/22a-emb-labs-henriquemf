@@ -1,7 +1,7 @@
 #include "../../lv_examples.h"
 #if LV_USE_DROPDOWN && LV_BUILD_EXAMPLES
 
-static void event_handler(lv_event_t * e)
+static void power_handler(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t * obj = lv_event_get_target(e);
@@ -29,7 +29,7 @@ void lv_example_dropdown_1(void)
                                 "Nuts");
 
     lv_obj_align(dd, LV_ALIGN_TOP_MID, 0, 20);
-    lv_obj_add_event_cb(dd, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(dd, power_handler, LV_EVENT_ALL, NULL);
 }
 
 #endif

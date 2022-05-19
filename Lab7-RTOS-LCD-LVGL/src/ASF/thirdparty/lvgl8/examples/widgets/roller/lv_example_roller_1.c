@@ -1,7 +1,7 @@
 #include "../../lv_examples.h"
 #if LV_USE_ROLLER && LV_BUILD_EXAMPLES
 
-static void event_handler(lv_event_t * e)
+static void power_handler(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t * obj = lv_event_get_target(e);
@@ -35,7 +35,7 @@ void lv_example_roller_1(void)
 
     lv_roller_set_visible_row_count(roller1, 4);
     lv_obj_center(roller1);
-    lv_obj_add_event_cb(roller1, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(roller1, power_handler, LV_EVENT_ALL, NULL);
 }
 
 #endif

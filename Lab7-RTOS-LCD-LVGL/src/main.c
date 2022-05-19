@@ -7,6 +7,7 @@
 #include "ili9341.h"
 #include "lvgl.h"
 #include "touch/touch.h"
+#include "clock.h"
 
 /************************************************************************/
 /* LCD / LVGL                                                           */
@@ -37,13 +38,31 @@ lv_obj_t * labelFloor;
 lv_obj_t * labelClock;
 lv_obj_t * labelSetValue;
 
+volatile int clk_clicked = 0;
+volatile char desliga = 0;
+
+typedef struct  {
+	uint32_t year;
+	uint32_t month;
+	uint32_t day;
+	uint32_t week;
+	uint32_t hour;
+	uint32_t minute;
+	uint32_t second;
+} calendar;
+
+
+SemaphoreHandle_t xSemaphoreRTC;
 
 /************************************************************************/
 /* RTOS                                                                 */
 /************************************************************************/
 
-#define TASK_LCD_STACK_SIZE                (1024*6/sizeof(portSTACK_TYPE))
-#define TASK_LCD_STACK_PRIORITY            (tskIDLE_PRIORITY)
+#define TASK_LCD_STACK_SIZE					(1024*6/sizeof(portSTACK_TYPE))
+#define TASK_LCD_STACK_PRIORITY				(tskIDLE_PRIORITY)
+
+#define TASK_RTC_STACK_SIZE					(4096 / sizeof(portSTACK_TYPE))
+#define TASK_RTC_STACK_PRIORITY				(tskIDLE_PRIORITY)
 
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask,  signed char *pcTaskName);
 extern void vApplicationIdleHook(void);
@@ -55,6 +74,13 @@ extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTa
 	printf("stack overflow %x %s\r\n", pxTask, (portCHAR *)pcTaskName);
 	for (;;) {	}
 }
+
+void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type);
+void RTC_Handler(void);
+
+volatile int rtc_seconds = 0;
+volatile uint32_t current_hour, current_min, current_sec;
+volatile uint32_t current_year, current_month, current_day, current_week;
 
 extern void vApplicationIdleHook(void) { }
 
@@ -68,10 +94,13 @@ extern void vApplicationMallocFailedHook(void) {
 /* lvgl                                                                 */
 /************************************************************************/
 
-static void event_handler(lv_event_t * e) {
+static void power_handler(lv_event_t * e) {
 	lv_event_code_t code = lv_event_get_code(e);
 
 	if(code == LV_EVENT_CLICKED) {
+		if (desliga == 0){
+			desliga = 1;
+		}
 		LV_LOG_USER("Clicked");
 	}
 	else if(code == LV_EVENT_VALUE_CHANGED) {
@@ -95,6 +124,11 @@ static void clk_handler(lv_event_t * e) {
 
 	if(code == LV_EVENT_CLICKED) {
 		LV_LOG_USER("Clicked");
+		if (clk_clicked == 0){
+			clk_clicked = 1;
+			} else {
+			clk_clicked = 0;
+		}
 	}
 	else if(code == LV_EVENT_VALUE_CHANGED) {
 		LV_LOG_USER("Toggled");
@@ -103,23 +137,23 @@ static void clk_handler(lv_event_t * e) {
 
 static void up_handler(lv_event_t * e) {
 	lv_event_code_t code = lv_event_get_code(e);
-
+	char *c;
+	int temp;
 	if(code == LV_EVENT_CLICKED) {
-		LV_LOG_USER("Clicked");
-	}
-	else if(code == LV_EVENT_VALUE_CHANGED) {
-		LV_LOG_USER("Toggled");
+		c = lv_label_get_text(labelSetValue);
+		temp = atoi(c);
+		lv_label_set_text_fmt(labelSetValue, "%02d", temp + 1);
 	}
 }
 
 static void down_handler(lv_event_t * e) {
 	lv_event_code_t code = lv_event_get_code(e);
-
+	char *c;
+	int temp;
 	if(code == LV_EVENT_CLICKED) {
-		LV_LOG_USER("Clicked");
-	}
-	else if(code == LV_EVENT_VALUE_CHANGED) {
-		LV_LOG_USER("Toggled");
+		c = lv_label_get_text(labelSetValue);
+		temp = atoi(c);
+		lv_label_set_text_fmt(labelSetValue, "%02d", temp - 1);
 	}
 }
 
@@ -137,8 +171,9 @@ void lv_termostato(void) {
 	lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
 	lv_obj_t * btn4 = lv_btn_create(lv_scr_act());
 	lv_obj_t * btn5 = lv_btn_create(lv_scr_act());
+	lv_obj_t * clock_logo = lv_imgbtn_create(lv_scr_act());
 	
-	lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
+	lv_obj_add_event_cb(btn1, power_handler, LV_EVENT_ALL, NULL);
 	lv_obj_align(btn1, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 	labelBtn1 = lv_label_create(btn1);
 	lv_label_set_text(labelBtn1, "[  " LV_SYMBOL_POWER);
@@ -148,16 +183,14 @@ void lv_termostato(void) {
 	lv_obj_add_event_cb(btn2, menu_handler, LV_EVENT_ALL, NULL);
 	lv_obj_align_to(btn2, btn1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 	labelBtn2 = lv_label_create(btn2);
-	lv_label_set_text(labelBtn2, "|  M ");
+	lv_label_set_text(labelBtn2, "|  M | ");
  	lv_obj_center(labelBtn2);
  	lv_obj_add_style(btn2, &style, 0);
 	 
-	lv_obj_add_event_cb(btn3, clk_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btn3, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
-	labelBtn3 = lv_label_create(btn3);
-	lv_label_set_text(labelBtn3, "| " LV_SYMBOL_BELL " ]");
-	lv_obj_center(labelBtn3);
-	lv_obj_add_style(btn3, &style, 0);
+	lv_obj_add_event_cb(clock_logo, clk_handler, LV_EVENT_ALL, NULL);
+	lv_obj_align_to(clock_logo, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
+	lv_imgbtn_set_src(clock_logo, LV_IMGBTN_STATE_RELEASED, &clock, NULL, NULL);
+	lv_obj_add_style(clock_logo, &style, 0);
 	
 	lv_obj_add_event_cb(btn5, down_handler, LV_EVENT_ALL, NULL);
 	lv_obj_align(btn5, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
@@ -189,7 +222,24 @@ void lv_termostato(void) {
 	lv_obj_align(labelClock, LV_ALIGN_RIGHT_MID, -5, -105);
 	lv_obj_set_style_text_font(labelClock, &dseg30, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelClock, "%02d:%02d", 17,46);
+}
+
+static void task_RTC(void *pvParameters) {
+	calendar rtc_initial = {2018, 3, 19, 12, 15, 45 ,1};
+	RTC_init(RTC, ID_RTC, rtc_initial, RTC_SR_SEC|RTC_SR_ALARM);
+
+	for (;;) {
+		rtc_get_time(RTC, &current_hour,&current_min, &current_sec);
+
+		/* aguarda por tempo inderteminado até a liberacao do semaforo */
+		if (xSemaphoreTake(xSemaphoreRTC, 1000 / portTICK_PERIOD_MS)){
+			lv_label_set_text_fmt(labelClock, "%02d:%02d", current_hour, current_min);
+			} else {
+			lv_label_set_text_fmt(labelClock, "%02d %02d", current_hour, current_min);
+		}
+		
+	}
+	
 }
 
 static void task_lcd(void *pvParameters) {
@@ -198,6 +248,11 @@ static void task_lcd(void *pvParameters) {
 	lv_termostato();
 
 	for (;;)  {
+		
+		if (desliga){
+			lv_obj_clean(lv_scr_act());
+		}
+		
 		lv_tick_inc(50);
 		lv_task_handler();
 		vTaskDelay(50);
@@ -207,6 +262,51 @@ static void task_lcd(void *pvParameters) {
 /************************************************************************/
 /* configs                                                              */
 /************************************************************************/
+
+void RTC_Handler(void) {
+	uint32_t ul_status = rtc_get_status(RTC);
+	
+	/* seccond tick */
+	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+		xSemaphoreGiveFromISR(xSemaphoreRTC, &xHigherPriorityTaskWoken);
+		
+	}
+	
+	/* Time or date alarm */
+	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+		// o código para irq de alame vem aqui
+	}
+
+	rtc_clear_status(RTC, RTC_SCCR_SECCLR);
+	rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
+	rtc_clear_status(RTC, RTC_SCCR_ACKCLR);
+	rtc_clear_status(RTC, RTC_SCCR_TIMCLR);
+	rtc_clear_status(RTC, RTC_SCCR_CALCLR);
+	rtc_clear_status(RTC, RTC_SCCR_TDERRCLR);
+}
+
+
+void RTC_init(Rtc *rtc, uint32_t id_rtc, calendar t, uint32_t irq_type) {
+	/* Configura o PMC */
+	pmc_enable_periph_clk(ID_RTC);
+
+	/* Default RTC configuration, 24-hour mode */
+	rtc_set_hour_mode(rtc, 0);
+
+	/* Configura data e hora manualmente */
+	rtc_set_date(rtc, t.year, t.month, t.day, t.week);
+	rtc_set_time(rtc, t.hour, t.minute, t.second);
+
+	/* Configure RTC interrupts */
+	NVIC_DisableIRQ(id_rtc);
+	NVIC_ClearPendingIRQ(id_rtc);
+	NVIC_SetPriority(id_rtc, 4);
+	NVIC_EnableIRQ(id_rtc);
+
+	/* Ativa interrupcao via alarme */
+	rtc_enable_interrupt(rtc,  irq_type);
+}
 
 static void configure_lcd(void) {
 	/**LCD pin configure on SPI*/
@@ -295,11 +395,18 @@ int main(void) {
 	configure_touch();
 	configure_lvgl();
 
+	xSemaphoreRTC = xSemaphoreCreateBinary();
+	if (xSemaphoreRTC == NULL)
+	printf("falha em criar o semaforo \n");
+
 	/* Create task to control oled */
 	if (xTaskCreate(task_lcd, "LCD", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS) {
 		printf("Failed to create lcd task\r\n");
 	}
 	
+	if (xTaskCreate(task_RTC, "RTC", TASK_RTC_STACK_SIZE, NULL, TASK_RTC_STACK_PRIORITY, NULL) != pdPASS) {
+		printf("Failed to create test led task\r\n");
+	}
 	/* Start the scheduler. */
 	vTaskStartScheduler();
 

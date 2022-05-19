@@ -9,7 +9,7 @@ static lv_obj_t* list2;
 
 static lv_obj_t* currentButton = NULL;
 
-static void event_handler(lv_event_t* e)
+static void power_handler(lv_event_t* e)
 {
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t* obj = lv_event_get_target(e);
@@ -139,7 +139,7 @@ void lv_example_list_2(void)
     for (i = 0; i < 15; i++) {
         btn = lv_btn_create(list1);
         lv_obj_set_width(btn, lv_pct(50));
-        lv_obj_add_event_cb(btn, event_handler, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(btn, power_handler, LV_EVENT_CLICKED, NULL);
 
         lv_obj_t* lab = lv_label_create(btn);
         lv_label_set_text_fmt(lab, "Item %d", i);

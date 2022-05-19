@@ -16,7 +16,7 @@ static lv_obj_t *checkbox = NULL;
 
 static volatile bool event_called = false;
 
-static void event_handler(lv_event_t *e)
+static void power_handler(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
 
@@ -39,7 +39,7 @@ void test_checkbox_should_call_event_handler_on_click_when_enabled(void)
     checkbox = lv_checkbox_create(active_screen);
     
     lv_obj_add_state(checkbox, LV_STATE_CHECKED);
-    lv_obj_add_event_cb(checkbox, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(checkbox, power_handler, LV_EVENT_ALL, NULL);
 
     lv_test_mouse_click_at(checkbox->coords.x1, checkbox->coords.y1);
 
