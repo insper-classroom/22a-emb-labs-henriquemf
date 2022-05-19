@@ -2298,6 +2298,9 @@
     <Compile Include="src\dseg50.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\dseg60.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\dseg70.c">
       <SubType>compile</SubType>
     </Compile>

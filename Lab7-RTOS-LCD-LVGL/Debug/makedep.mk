@@ -630,6 +630,8 @@ src\dseg35.c
 
 src\dseg50.c
 
+src\dseg60.c
+
 src\dseg70.c
 
 src\touch\touch.c

@@ -17,6 +17,7 @@ LV_FONT_DECLARE(dseg20);
 LV_FONT_DECLARE(dseg30);
 LV_FONT_DECLARE(dseg35);
 LV_FONT_DECLARE(dseg50);
+LV_FONT_DECLARE(dseg60);
 LV_FONT_DECLARE(dseg70);
 
 #define LV_HOR_RES_MAX          (320)
@@ -167,60 +168,59 @@ void lv_termostato(void) {
 	lv_style_init(&style);
 	lv_style_set_bg_color(&style, lv_color_black());
 	
-	lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
-	lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-	lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
-	lv_obj_t * btn4 = lv_btn_create(lv_scr_act());
-	lv_obj_t * btn5 = lv_btn_create(lv_scr_act());
+	lv_obj_t * pwr_btn = lv_btn_create(lv_scr_act());
+	lv_obj_t * m_btn = lv_btn_create(lv_scr_act());
+	lv_obj_t * up_btn = lv_btn_create(lv_scr_act());
+	lv_obj_t * down_btn = lv_btn_create(lv_scr_act());
 	lv_obj_t * clock_logo = lv_imgbtn_create(lv_scr_act());
 	
-	lv_obj_add_event_cb(btn1, power_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align(btn1, LV_ALIGN_BOTTOM_LEFT, 0, 0);
-	labelBtn1 = lv_label_create(btn1);
+	lv_obj_add_event_cb(pwr_btn, power_handler, LV_EVENT_ALL, NULL);
+	lv_obj_align(pwr_btn, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+	labelBtn1 = lv_label_create(pwr_btn);
 	lv_label_set_text(labelBtn1, "[  " LV_SYMBOL_POWER);
 	lv_obj_center(labelBtn1);
-	lv_obj_add_style(btn1, &style, 0);
+	lv_obj_add_style(pwr_btn, &style, 0);
 	
-	lv_obj_add_event_cb(btn2, menu_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btn2, btn1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
-	labelBtn2 = lv_label_create(btn2);
+	lv_obj_add_event_cb(m_btn, menu_handler, LV_EVENT_ALL, NULL);
+	lv_obj_align_to(m_btn, pwr_btn, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
+	labelBtn2 = lv_label_create(m_btn);
 	lv_label_set_text(labelBtn2, "|  M | ");
  	lv_obj_center(labelBtn2);
- 	lv_obj_add_style(btn2, &style, 0);
+ 	lv_obj_add_style(m_btn, &style, 0);
 	 
 	lv_obj_add_event_cb(clock_logo, clk_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(clock_logo, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 5);
+	lv_obj_align_to(clock_logo, m_btn, LV_ALIGN_OUT_RIGHT_TOP, 0, 5);
 	lv_imgbtn_set_src(clock_logo, LV_IMGBTN_STATE_RELEASED, &clock, NULL, NULL);
 	lv_obj_add_style(clock_logo, &style, 0);
 	
-	lv_obj_add_event_cb(btn5, down_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align(btn5, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
-	labelBtn5 = lv_label_create(btn5);
+	lv_obj_add_event_cb(down_btn, down_handler, LV_EVENT_ALL, NULL);
+	lv_obj_align(down_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+	labelBtn5 = lv_label_create(down_btn);
 	lv_label_set_text(labelBtn5, "| " LV_SYMBOL_DOWN " ]");
 	lv_obj_center(labelBtn5);
-	lv_obj_add_style(btn5, &style, 0);
+	lv_obj_add_style(down_btn, &style, 0);
 	
-	lv_obj_add_event_cb(btn4, up_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(btn4, btn5, LV_ALIGN_OUT_LEFT_TOP, -30, 0);
-	labelBtn4 = lv_label_create(btn4);
+	lv_obj_add_event_cb(up_btn, up_handler, LV_EVENT_ALL, NULL);
+	lv_obj_align_to(up_btn, down_btn, LV_ALIGN_OUT_LEFT_TOP, -30, 0);
+	labelBtn4 = lv_label_create(up_btn);
 	lv_label_set_text(labelBtn4, "[  " LV_SYMBOL_UP);
 	lv_obj_center(labelBtn4);
-	lv_obj_add_style(btn4, &style, 0);
+	lv_obj_add_style(up_btn, &style, 0);
 	
 	labelFloor = lv_label_create(lv_scr_act());
-	lv_obj_align(labelFloor, LV_ALIGN_LEFT_MID, 35 , -45);
-	lv_obj_set_style_text_font(labelFloor, &dseg70, LV_STATE_DEFAULT);
+	lv_obj_align(labelFloor, LV_ALIGN_LEFT_MID, 15 , -35);
+	lv_obj_set_style_text_font(labelFloor, &dseg60, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelFloor, lv_color_white(), LV_STATE_DEFAULT);
-	lv_label_set_text_fmt(labelFloor, "%02d", 23);
+	lv_label_set_text_fmt(labelFloor, "%.1f", 23.4);
 	
 	labelSetValue = lv_label_create(lv_scr_act());
-	lv_obj_align(labelSetValue, LV_ALIGN_RIGHT_MID, -20 , -55);
+	lv_obj_align(labelSetValue, LV_ALIGN_RIGHT_MID, -20 , -45);
 	lv_obj_set_style_text_font(labelSetValue, &dseg50, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelSetValue, lv_color_white(), LV_STATE_DEFAULT);
 	lv_label_set_text_fmt(labelSetValue, "%02d", 22);
 	
 	labelClock = lv_label_create(lv_scr_act());
-	lv_obj_align(labelClock, LV_ALIGN_RIGHT_MID, -5, -105);
+	lv_obj_align(labelClock, LV_ALIGN_RIGHT_MID, -15, -95);
 	lv_obj_set_style_text_font(labelClock, &dseg30, LV_STATE_DEFAULT);
 	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
 }
