@@ -12,6 +12,12 @@
 /* LCD / LVGL                                                           */
 /************************************************************************/
 
+LV_FONT_DECLARE(dseg20);
+LV_FONT_DECLARE(dseg30);
+LV_FONT_DECLARE(dseg35);
+LV_FONT_DECLARE(dseg50);
+LV_FONT_DECLARE(dseg70);
+
 #define LV_HOR_RES_MAX          (320)
 #define LV_VER_RES_MAX          (240)
 
@@ -27,6 +33,10 @@ static lv_obj_t * labelBtn2;
 static lv_obj_t * labelBtn3;
 static lv_obj_t * labelBtn4;
 static lv_obj_t * labelBtn5;
+lv_obj_t * labelFloor;
+lv_obj_t * labelClock;
+lv_obj_t * labelSetValue;
+
 
 /************************************************************************/
 /* RTOS                                                                 */
@@ -162,8 +172,24 @@ void lv_termostato(void) {
 	lv_label_set_text(labelBtn4, "[  " LV_SYMBOL_UP);
 	lv_obj_center(labelBtn4);
 	lv_obj_add_style(btn4, &style, 0);
-	 
 	
+	labelFloor = lv_label_create(lv_scr_act());
+	lv_obj_align(labelFloor, LV_ALIGN_LEFT_MID, 35 , -45);
+	lv_obj_set_style_text_font(labelFloor, &dseg70, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(labelFloor, lv_color_white(), LV_STATE_DEFAULT);
+	lv_label_set_text_fmt(labelFloor, "%02d", 23);
+	
+	labelSetValue = lv_label_create(lv_scr_act());
+	lv_obj_align(labelSetValue, LV_ALIGN_RIGHT_MID, -20 , -55);
+	lv_obj_set_style_text_font(labelSetValue, &dseg50, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(labelSetValue, lv_color_white(), LV_STATE_DEFAULT);
+	lv_label_set_text_fmt(labelSetValue, "%02d", 22);
+	
+	labelClock = lv_label_create(lv_scr_act());
+	lv_obj_align(labelClock, LV_ALIGN_RIGHT_MID, -5, -105);
+	lv_obj_set_style_text_font(labelClock, &dseg30, LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(labelClock, lv_color_white(), LV_STATE_DEFAULT);
+	lv_label_set_text_fmt(labelClock, "%02d:%02d", 17,46);
 }
 
 static void task_lcd(void *pvParameters) {

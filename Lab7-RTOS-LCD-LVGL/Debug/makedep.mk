@@ -620,6 +620,16 @@ src\ASF\thirdparty\lvgl8\tests\unity\unity.c
 
 src\ASF\thirdparty\lvgl8\tests\unity\unity_support.c
 
+src\dseg20.c
+
+src\dseg30.c
+
+src\dseg35.c
+
+src\dseg50.c
+
+src\dseg70.c
+
 src\touch\touch.c
 
 src\ASF\common\services\sleepmgr\sam\sleepmgr.c
