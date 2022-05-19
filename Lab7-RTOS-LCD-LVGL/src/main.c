@@ -53,6 +53,7 @@ typedef struct  {
 
 
 SemaphoreHandle_t xSemaphoreRTC;
+SemaphoreHandle_t xMutexLVGL;
 
 /************************************************************************/
 /* RTOS                                                                 */
@@ -188,7 +189,7 @@ void lv_termostato(void) {
  	lv_obj_add_style(btn2, &style, 0);
 	 
 	lv_obj_add_event_cb(clock_logo, clk_handler, LV_EVENT_ALL, NULL);
-	lv_obj_align_to(clock_logo, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
+	lv_obj_align_to(clock_logo, btn2, LV_ALIGN_OUT_RIGHT_TOP, 0, 5);
 	lv_imgbtn_set_src(clock_logo, LV_IMGBTN_STATE_RELEASED, &clock, NULL, NULL);
 	lv_obj_add_style(clock_logo, &style, 0);
 	
@@ -253,8 +254,10 @@ static void task_lcd(void *pvParameters) {
 			lv_obj_clean(lv_scr_act());
 		}
 		
+		xSemaphoreTake(xMutexLVGL, portMAX_DELAY );
 		lv_tick_inc(50);
 		lv_task_handler();
+		xSemaphoreGive(xMutexLVGL);
 		vTaskDelay(50);
 	}
 }
@@ -394,10 +397,14 @@ int main(void) {
 	configure_lcd();
 	configure_touch();
 	configure_lvgl();
+	
+	xMutexLVGL = xSemaphoreCreateMutex();
+	if (xMutexLVGL == NULL)
+		printf("falha em criar o semaforo \n");
 
 	xSemaphoreRTC = xSemaphoreCreateBinary();
 	if (xSemaphoreRTC == NULL)
-	printf("falha em criar o semaforo \n");
+		printf("falha em criar o semaforo \n");
 
 	/* Create task to control oled */
 	if (xTaskCreate(task_lcd, "LCD", TASK_LCD_STACK_SIZE, NULL, TASK_LCD_STACK_PRIORITY, NULL) != pdPASS) {
