@@ -53,6 +53,7 @@ typedef struct  {
 
 
 SemaphoreHandle_t xSemaphoreRTC;
+SemaphoreHandle_t xMutexLVGL;
 
 /************************************************************************/
 /* RTOS                                                                 */
@@ -253,8 +254,10 @@ static void task_lcd(void *pvParameters) {
 			lv_obj_clean(lv_scr_act());
 		}
 		
+		xSemaphoreTake(xMutexLVGL, portMAX_DELAY );
 		lv_tick_inc(50);
 		lv_task_handler();
+		xSemaphoreGive(xMutexLVGL);
 		vTaskDelay(50);
 	}
 }
@@ -397,6 +400,10 @@ int main(void) {
 
 	xSemaphoreRTC = xSemaphoreCreateBinary();
 	if (xSemaphoreRTC == NULL)
+	printf("falha em criar o semaforo \n");
+	
+	xMutexLVGL = xSemaphoreCreateMutex();
+	if (xMutexLVGL == NULL)
 	printf("falha em criar o semaforo \n");
 
 	/* Create task to control oled */
