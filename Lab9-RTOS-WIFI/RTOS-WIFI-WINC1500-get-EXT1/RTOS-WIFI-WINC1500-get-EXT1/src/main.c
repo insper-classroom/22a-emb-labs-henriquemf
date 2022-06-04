@@ -86,6 +86,11 @@ extern void vApplicationMallocFailedHook(void){
 /* funcoes                                                              */
 /************************************************************************/
 
+void getrequest(char *endpoint){
+	sprintf((char *)g_sendBuffer, MAIN_PREFIX_BUFFER, endpoint);
+	send(tcp_client_socket, g_sendBuffer, strlen((char *)g_sendBuffer), 0);
+}
+
 /************************************************************************/
 /* callbacks                                                            */
 /************************************************************************/
@@ -260,8 +265,7 @@ static void task_process(void *pvParameters) {
 
       case GET:
       printf("STATE: GET \n");
-      sprintf((char *)g_sendBuffer, MAIN_PREFIX_BUFFER);
-      send(tcp_client_socket, g_sendBuffer, strlen((char *)g_sendBuffer), 0);
+      getrequest("/status");
       state = ACK;
       break;
 

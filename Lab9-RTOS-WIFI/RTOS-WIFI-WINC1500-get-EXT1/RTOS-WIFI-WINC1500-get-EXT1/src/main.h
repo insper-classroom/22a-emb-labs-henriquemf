@@ -48,15 +48,15 @@ extern "C" {
 #include "driver/include/m2m_wifi.h"
 
 /** Wi-Fi Settings */
-#define MAIN_WLAN_SSID                    "Embarcados" /**< Destination SSID */
+#define MAIN_WLAN_SSID                    "FREZZATTI" /**< Destination SSID */
 #define MAIN_WLAN_AUTH                    M2M_WIFI_SEC_WPA_PSK /**< Security manner */
-#define MAIN_WLAN_PSK                     "MarcoMonstrao" /**< Password for Destination SSID */
+#define MAIN_WLAN_PSK                     "Nf071294" /**< Password for Destination SSID */
 
 /** Using broadcast address for simplicity. */
 #define MAIN_SERVER_PORT                    (5000)
 
 /** Weather information provider server. */
-#define MAIN_SERVER_NAME                    "192.168.50.227"
+#define MAIN_SERVER_NAME                    "192.168.0.18"
 
 /** IP address parsing. */
 #define IPV4_BYTE(val, index)               ((val >> (index * 8)) & 0xFF)
