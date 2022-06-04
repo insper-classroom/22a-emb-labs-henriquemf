@@ -259,8 +259,8 @@ static void task_process(void *pvParameters) {
   uint msg_counter = 0;
   tstrSocketRecvMsg *p_recvMsg;
   
-  char actual_status = 0;
-  char led_but_status = 0;
+  char status = 0;
+  char request_status = 0;
 
   enum states {
     WAIT = 0,
@@ -299,9 +299,11 @@ static void task_process(void *pvParameters) {
 	  
 	  case POST:
 	  printf("STATE: POST \n");
-	  actual_status = led_but_status == 1 ? 0 : 1;
-	  printf("ESSE É O REQUEST STATUS: %d", actual_status);
-	  postrequest("/status", actual_status);
+	  printf("\n\n STATUS_ATUAL: %c\n\n", status);
+	  request_status = status == '1' ? '0' : '1';
+	  printf("\n\n REQUEST_STATUS: %c\n\n", request_status);
+	  vTaskDelay(10);
+	  postrequest("/status", request_status);
 	  state = ACK_POST;
 	  break;
 
@@ -341,29 +343,31 @@ static void task_process(void *pvParameters) {
       printf("STATE: MSG \n");
       memset(g_receivedBuffer, 0, MAIN_WIFI_M2M_BUFFER_SIZE);
       recv(tcp_client_socket, &g_receivedBuffer[0], MAIN_WIFI_M2M_BUFFER_SIZE, 0);
-
       if(xQueueReceive(xQueueMsg, &p_recvMsg, 5000) == pdTRUE){
         printf(STRING_LINE);
         printf(p_recvMsg->pu8Buffer);
+        printf(STRING_EOL);  printf(STRING_LINE);
 		char *parse = strstr(p_recvMsg->pu8Buffer, "led");
-		char led_status = *(parse + 7);
-		printf("\n\n LED: %c", led_status);
-		if (led_status == '0'){
-			pio_set(LED_PIO, LED_IDX_MASK);
-		}
+		char led_status = *(parse+7);
+		printf(parse);
+		printf("LED: %c\n", led_status);
 		
-		else {
-			pio_clear(LED_PIO, LED_IDX_MASK);
+		if(led_status != status){
+			status = led_status;
+			printf("\n STATUS BUT: %c\n\n", status);
+			if (status == '1'){
+				pio_clear(LED_PIO, LED_IDX_MASK);
+			} else {
+				pio_set(LED_PIO, LED_IDX_MASK);
+			}
 		}
-        printf(STRING_EOL);  
-		printf(STRING_LINE);
         state = DONE;
       }
       else {
         state = TIMEOUT;
       };
       break;
-
+	 
       case DONE:
       printf("STATE: DONE \n");
 
@@ -451,24 +455,26 @@ void LED_init(int estado) {
 	pio_set_output(LED_PIO, LED_IDX_MASK, estado, 0, 0);
 };
 
-void but_init() {
+void configure_pio_input(Pio *pio, const pio_type_t ul_type, const uint32_t ul_mask, const uint32_t ul_attribute, uint32_t ul_id){
+	pmc_enable_periph_clk(ul_id);
+	pio_configure(pio, ul_type, ul_mask, ul_attribute);
+	pio_set_debounce_filter(pio, ul_mask, 60);
+}
+
+void configure_interruption(Pio *pio, uint32_t ul_id, const uint32_t ul_mask,  uint32_t ul_attr, void (*p_handler) (uint32_t, uint32_t), uint32_t priority){
+	pio_handler_set(pio, ul_id, ul_mask , ul_attr, p_handler);
+	pio_enable_interrupt(pio, ul_mask);
+	pio_get_interrupt_status(pio);
+	NVIC_EnableIRQ(ul_id);
+	NVIC_SetPriority(ul_id, priority);
+}
+
+void io_init(void){
 	pmc_enable_periph_clk(LED_PIO_ID);
-	pio_set_output(LED_PIO, LED_IDX_MASK, 0, 0, 0);
+	pio_set_output(LED_PIO, LED_IDX_MASK, 0, 0, 0 );
 
-	pmc_enable_periph_clk(BUT_PIO_ID);
-	pio_configure(BUT_PIO, PIO_INPUT, BUT_PIO_IDX_MASK, PIO_PULLUP | PIO_DEBOUNCE);
-	pio_set_debounce_filter(BUT_PIO, BUT_PIO_IDX_MASK, 60);
-	pio_handler_set(BUT_PIO,
-	BUT_PIO_ID,
-	BUT_PIO_IDX_MASK,
-	PIO_IT_FALL_EDGE,
-	but_callback);
-	pio_enable_interrupt(BUT_PIO, BUT_PIO_IDX_MASK);
-	pio_get_interrupt_status(BUT_PIO);
-	NVIC_EnableIRQ(BUT_PIO_ID);
-	NVIC_SetPriority(BUT_PIO_ID, 4);
-
-	pio_set(LED_PIO, LED_IDX_MASK);
+	configure_pio_input(BUT_PIO, PIO_INPUT, BUT_PIO_IDX_MASK, PIO_PULLUP|PIO_DEBOUNCE, BUT_PIO_ID);
+	configure_interruption(BUT_PIO, BUT_PIO_ID, BUT_PIO_IDX_MASK, PIO_IT_FALL_EDGE, but_callback, 4);
 }
 
 int main(void)
@@ -476,7 +482,7 @@ int main(void)
   /* Initialize the board. */
   sysclk_init();
   board_init();
-  but_init();
+  io_init();
   LED_init(1);
 
   /* Initialize the UART console. */
